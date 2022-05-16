@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Automate creation of files for FOB calculations in FHI-aims."""
+
 import os
 import shutil
 
@@ -42,35 +44,37 @@ def create_new_controls(target_atom, num_atom):
 
             # Replace specific lines
             for i, line in enumerate(content):
+                spl = line.split()
+
                 # Some error checking
-                if len(line.split()) > 1:
-                    if 'force_occupation_basis' == line.split()[0]:
+                if len(spl) > 1:
+                    if 'force_occupation_basis' == spl[0]:
                         print('force_occupation_basis keyword already found in control.in')
                         exit(1)
 
-                    if 'charge' == line.split()[0]:
+                    if 'charge' == spl[0]:
                         print('charge keyword already found in control.in')
                         exit(1)
 
-                    if 'output' == line.split()[0] and \
-                       'cube' == line.split()[1] and \
-                       'spin_density' == line.split()[2]:
+                    if 'output' == spl[0] and \
+                       'cube' == spl[1] and \
+                       'spin_density' == spl[2]:
                         print('spin_density cube output already specified in control.in')
 
                     # Replace if keyword lines are commented out
-                    if 'KS_method' in line.split():
+                    if 'KS_method' in spl:
                         content[i] = ks_method
-                    if '#force_occupation_basis' in line.split():
+                    if '#force_occupation_basis' in spl:
                         content[i] = fob
-                    if '#' == line.split()[0] and 'force_occupation_basis' == line.split()[1]:
+                    if '#' == spl[0] and 'force_occupation_basis' == spl[1]:
                         content[i] = fob
-                    if '#charge' in line.split():
+                    if '#charge' in spl:
                         content[i] = charge
-                    if '#' == line.split()[0] and 'charge' == line.split()[1]:
+                    if '#' == spl[0] and 'charge' == spl[1]:
                         content[i] = charge
                     if line.strip() == '#output                  cube spin_density':
                         content[i] = cube
-                    if '#' == line.split()[0] and 'output' == line.split()[1]:
+                    if '#' == spl[0] and 'output' == spl[1]:
                         content[i] = cube
 
             # Check if parameters not found

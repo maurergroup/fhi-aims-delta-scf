@@ -41,15 +41,38 @@ def create_init_files(target_atom, num_atom):
         shutil.copyfile('geometry.in', f'../{target_atom}{i}/init/geometry.in')
 
         control = f'../{target_atom}{i}/init/control.in'
+        geometry = f'../{target_atom}{i}/init/geometry.in'
 
-        # Find and replace stuff to be changed
+        # Change geometry file
+        with open(geometry, 'r') as read_geom:
+            geom_content = read_geom.readlines()
+
+            # Change atom to {atom}{num}
+            atom_counter = 0
+            for j, line in enumerate(geom_content):
+                spl = line.split()
+
+                if 'atom' and target_atom in line:
+                    atom_counter += 1
+
+                    if atom_counter == i:
+                        partial_hole_atom = f' {target_atom}1'
+                        geom_content[j] = ' '.join(spl[0:-1]) + partial_hole_atom
+
+        with open(geometry, 'w+') as write_geom:
+            write_geom.writelines(geom_content)
+
+        print('Geometry init files written successfully')
+
+        # Change control file
         with open(control, 'r') as read_control:
-            content = read_control.readlines()
+            control_content = read_control.readlines()
 
             # Replace specific lines
-            for i, line in enumerate(content):
-                # Some error checking
+            for j, line in enumerate(control_content):
                 spl = line.split()
+
+                # Some error checking
                 if len(spl) > 1:
                     if 'restart' == spl[0]:
                         print('restart keyword already found in init/control.in')
@@ -60,27 +83,27 @@ def create_init_files(target_atom, num_atom):
 
                 # Replace if keyword lines are commented out
                 if 'sc_iter_limit' in spl:
-                    content[i] = iter_limit
+                    control_content[j] = iter_limit
                 if '#sc_iter_limit' in spl:
-                    content[i] = init_iter
+                    control_content[j] = init_iter
                 if '#' == spl[0] and 'sc_iter_limit' == spl[1]:
-                    content[i] = init_iter
+                    control_content[j] = init_iter
                 if 'KS_method' in spl:
-                    content[i] = ks_method
+                    control_content[j] = ks_method
                 if 'restart_write_only' in spl:
-                    content[i] = restart_file
+                    control_content[j] = restart_file
                 if 'restart_save_iterations' in spl:
-                    content[i] = restart_save
+                    control_content[j] = restart_save
                 if 'force_single_restartfile' in spl:
-                    content[i] = restart_force
+                    control_content[j] = restart_force
                 if '#charge' in spl:
-                    content[i] = charge
+                    control_content[j] = charge
                 if '#' == spl[0] and 'charge' == spl[1]:
-                    content[i] = charge
+                    control_content[j] = charge
                 if 'output' == spl[0] and 'mulliken' == spl[1]:
-                    content[i] = output_mull
+                    control_content[j] = output_mull
                 if 'output' == spl[0] and 'hirshfeld' == spl[1]:
-                    content[i] = output_hirsh
+                    control_content[j] = output_hirsh
 
             # Check if parameters not found
             no_iter_limit = False
@@ -88,18 +111,18 @@ def create_init_files(target_atom, num_atom):
             no_ks = False
             no_charge = False
 
-            if no_iter_limit not in content:
+            if no_iter_limit not in control_content:
                 no_iter_limit = True
-            if no_init_iter not in content:
+            if no_init_iter not in control_content:
                 no_init_iter = True
-            if ks_method not in content:
+            if ks_method not in control_content:
                 no_ks = True
-            if charge not in content:
+            if charge not in control_content:
                 no_charge = True
 
         # Write the data to the file
         with open(control, 'w+') as write_control:
-            write_control.writelines(content)
+            write_control.writelines(control_content)
 
             # Append parameters to end of file if not found
             if no_iter_limit is True:
@@ -111,11 +134,19 @@ def create_init_files(target_atom, num_atom):
             if no_charge is True:
                 write_control.write(charge)
 
-        print('Files and directories written successfully')
+        print('Control init files written successfully')
 
-def create_hole_files():
-    os.makedirs(f'../{target_atom}{i}/hole')
+
+def create_hole_files(target_atom, num_atom):
+
+    for i in range(num_atom):
+        i += 1
+        os.makedirs(f'../{target_atom}{i}/hole')
+        shutil.copyfile(f'../{target_atom}{i}/init/control.in', f'../{target_atom}{i}/hole/control.in')
+        shutil.copyfile(f'../{target_atom}{i}/init/control.in', f'../{target_atom}{i}/hole/control.in')
+
 
 if __name__ == '__main__':
     target_atom, num_atom = read_ground_inp()
     create_init_files(target_atom, num_atom)
+    create_hole_files(target_atom, num_atom)
