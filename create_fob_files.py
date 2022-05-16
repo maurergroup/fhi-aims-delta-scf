@@ -5,7 +5,7 @@ import shutil
 
 
 def read_ground_inp():
-    """Find number of C in geometry."""
+    """Find number of atoms in geometry."""
     target_atom = str(input('Enter atom: '))
     with open('geometry.in', 'r') as geom_in:
         atom_counter = 0
@@ -17,24 +17,24 @@ def read_ground_inp():
             if identifier == 'atom' and element == target_atom:
                 atom_counter += 1
 
-    return atom_counter
+    return target_atom, atom_counter
 
 
-def create_new_controls(num_atom):
+def create_new_controls(target_atom, num_atom):
     """Write new directories and control files to calculate FOB."""
-    for i in range(num_atom):
-        i += 1
-        os.mkdir(f'../C{i}/')
-        shutil.copyfile('control.in', f'../C{i}/control.in')
-        shutil.copyfile('geometry.in', f'../C{i}/geometry.in')
+
+    ks_method = 'KS_method               serial\n'
+    charge = 'charge                  1.0\n'
+    cube = 'output                  cube spin_density\n'
 
     for i in range(num_atom):
         i += 1
-        control = f'../C{i}/control.in'
-        ks_method = 'KS_method               parallel\n'
+        os.mkdir(f'../{target_atom}{i}/')
+        shutil.copyfile('control.in', f'../{target_atom}{i}/control.in')
+        shutil.copyfile('geometry.in', f'../{target_atom}{i}/geometry.in')
+
+        control = f'../{target_atom}{i}/control.in'
         fob = f'force_occupation_basis  {i} 1 atomic 1 0 0 0.0 {num_atom}\n'
-        charge = 'charge                  1.0\n'
-        cube = 'output                  cube spin_density\n'
 
         # Find and replace stuff to be changed
         with open(control, 'r') as read_control:
@@ -53,8 +53,8 @@ def create_new_controls(num_atom):
                         exit(1)
 
                     if 'output' == line.split()[0] and \
-                    'cube' == line.split()[1] and \
-                    'spin_density' == line.split()[2]:
+                       'cube' == line.split()[1] and \
+                       'spin_density' == line.split()[2]:
                         print('spin_density cube output already specified in control.in')
 
                     # Replace if keyword lines are commented out
@@ -106,5 +106,5 @@ def create_new_controls(num_atom):
 
 
 if __name__ == '__main__':
-    num_atom = read_ground_inp()
-    create_new_controls(num_atom)
+    target_atom, num_atom = read_ground_inp()
+    create_new_controls(target_atom, num_atom)
