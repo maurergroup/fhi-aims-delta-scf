@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+"""Automate creation of files for FOP calculations in FHI-aims."""
+
 import os
 import shutil
 
 
 def read_ground_inp():
-    """Find number of C in geometry."""
+    """Find number of atoms in geometry."""
     target_atom = str(input('Enter atom: '))
     with open('geometry.in', 'r') as geom_in:
         atom_counter = 0
@@ -17,25 +19,28 @@ def read_ground_inp():
             if identifier == 'atom' and element == target_atom:
                 atom_counter += 1
 
-    return atom_counter
+    return target_atom, atom_counter
 
 
-def create_init_controls(num_atom):
-    """Write new directories and control files to calculate FOB."""
+def create_init_files(target_atom, num_atom):
+    """Write new directories and control files to calculate FOP."""
+    iter_limit = 'sc_iter_limit           1\n'
+    init_iter = '# sc_init_iter          75\n'
+    ks_method = 'KS_method               serial\n'
+    restart_file = 'restart                 restart_file\n'
+    restart_save = '# restart_save_iterations 100\n'
+    restart_force = '# force_single_restartfile .true.\n'
+    charge = 'charge                  1.0\n'
+    output_mull = '# output                 mulliken'
+    output_hirsh = '# output                 hirshfeld'
+
     for i in range(num_atom):
         i += 1
-        os.makedirs(f'../C{i}/hole')
-        os.makedirs(f'../C{i}/init')
-        shutil.copyfile('control.in', f'../C{i}/init/control.in')
-        shutil.copyfile('geometry.in', f'../C{i}/init/geometry.in')
+        os.makedirs(f'../{target_atom}{i}/init')
+        shutil.copyfile('control.in', f'../{target_atom}{i}/init/control.in')
+        shutil.copyfile('geometry.in', f'../{target_atom}{i}/init/geometry.in')
 
-    for i in range(num_atom):
-        i += 1
-        control = f'../C{i}/control.in'
-        ks_method = 'KS_method               parallel\n'
-        fob = f'force_occupation_basis  {i} 1 atomic 1 0 0 0.0 {num_atom}\n'
-        charge = 'charge                  1.0\n'
-        cube = 'output                  cube spin_density\n'
+        control = f'../{target_atom}{i}/init/control.in'
 
         # Find and replace stuff to be changed
         with open(control, 'r') as read_control:
@@ -44,68 +49,73 @@ def create_init_controls(num_atom):
             # Replace specific lines
             for i, line in enumerate(content):
                 # Some error checking
-                # if len(line.split()) > 1:
-                if 'force_occupation_basis' == line.split()[0]:
-                    print('force_occupation_basis keyword already found in control.in')
-                    exit(1)
+                spl = line.split()
+                if len(spl) > 1:
+                    if 'restart' == spl[0]:
+                        print('restart keyword already found in init/control.in')
 
-                if 'charge' == line.split()[0]:
-                    print('charge keyword already found in control.in')
-                    exit(1)
-
-                if 'output' in line.split()[0] and \
-                   'cube' in line.split()[1] and \
-                   'spin_density' in line.split()[2]:
-                    print('spin_density cube output already specified in control.in')
+                    if 'charge' == spl[0]:
+                        print('charge keyword already found in control.in')
+                        exit(1)
 
                 # Replace if keyword lines are commented out
-                if 'KS_method' in line.split():
+                if 'sc_iter_limit' in spl:
+                    content[i] = iter_limit
+                if '#sc_iter_limit' in spl:
+                    content[i] = init_iter
+                if '#' == spl[0] and 'sc_iter_limit' == spl[1]:
+                    content[i] = init_iter
+                if 'KS_method' in spl:
                     content[i] = ks_method
-                if '#force_occupation_basis' in line.split():
-                    content[i] = fob
-                if '#' in line.split()[0] and 'force_occupation_basis' in line.split()[1]:
-                    content[i] = fob
-                if '#charge' in line.split():
+                if 'restart_write_only' in spl:
+                    content[i] = restart_file
+                if 'restart_save_iterations' in spl:
+                    content[i] = restart_save
+                if 'force_single_restartfile' in spl:
+                    content[i] = restart_force
+                if '#charge' in spl:
                     content[i] = charge
-                if '#' in line.split()[0] and 'charge' in line.split()[1]:
+                if '#' == spl[0] and 'charge' == spl[1]:
                     content[i] = charge
-                if line.strip() == '#output                  cube spin_density':
-                    content[i] = cube
-                if '#' in line.split()[0] and 'output' in line.split()[1]:
-                    content[i] = cube
+                if 'output' == spl[0] and 'mulliken' == spl[1]:
+                    content[i] = output_mull
+                if 'output' == spl[0] and 'hirshfeld' == spl[1]:
+                    content[i] = output_hirsh
 
             # Check if parameters not found
+            no_iter_limit = False
+            no_init_iter = False
             no_ks = False
-            no_fob = False
             no_charge = False
-            no_cube = False
 
+            if no_iter_limit not in content:
+                no_iter_limit = True
+            if no_init_iter not in content:
+                no_init_iter = True
             if ks_method not in content:
                 no_ks = True
-            if fob not in content:
-                no_fob = True
             if charge not in content:
                 no_charge = True
-            if cube not in content:
-                no_cube = True
 
         # Write the data to the file
         with open(control, 'w+') as write_control:
             write_control.writelines(content)
 
             # Append parameters to end of file if not found
+            if no_iter_limit is True:
+                write_control.write(iter_limit)
+            if no_init_iter is True:
+                write_control.write(iter_limit)
             if no_ks is True:
                 write_control.write(ks_method)
-            if no_fob is True:
-                write_control.write(fob)
             if no_charge is True:
                 write_control.write(charge)
-            if no_cube is True:
-                write_control.write(cube)
 
         print('Files and directories written successfully')
 
+def create_hole_files():
+    os.makedirs(f'../{target_atom}{i}/hole')
 
 if __name__ == '__main__':
-    num_atom = read_ground_inp()
-    create_new_controls(num_atom)
+    target_atom, num_atom = read_ground_inp()
+    create_init_files(target_atom, num_atom)
