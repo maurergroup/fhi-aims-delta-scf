@@ -168,21 +168,27 @@ def create_hole_files(target_atom, num_atom):
                 if len(spl) > 1:
                     if 'sc_init_iter' == spl[0]:
                         print('sc_init_iter keyword already found in init/control.in')
+                        exit(1)
 
                     if 'restart_read_only' == spl[0]:
                         print('restart_read_only keyword already found in init/control.in')
+                        exit(1)
 
                     if 'force_occupation_projector' == spl[0]:
                         print('force_occupation_projector keyword already found in init/control.in')
+                        exit(1)
 
                     if 'output' == spl[0] and 'cube' == spl[1] and 'spin_density' == spl[2]:
                         print('output cube spin_density already found in init/control.in')
+                        exit(1)
 
                     if 'output' == spl[0] and 'mulliken' == spl[1]:
                         print('output mulliken already found in init/control.in')
+                        exit(1)
 
                     if 'output' == spl[0] and 'hirshfeld' == spl[1]:
                         print('output hirshfeld already found in init/control.in')
+                        exit(1)
 
                     # Change keyword lines
                     if 'sc_iter_limit' in spl:
