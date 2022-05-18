@@ -61,7 +61,7 @@ def create_new_controls(target_atom, num_atom):
                        'spin_density' == spl[2]:
                         print('spin_density cube output already specified in control.in')
 
-                    # Replace if keyword lines are commented out
+                    # Change keyword lines
                     if 'KS_method' in spl:
                         content[i] = ks_method
                     if '#force_occupation_basis' in spl:
