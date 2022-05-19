@@ -39,7 +39,7 @@ def create_init_files(target_atom, num_atom):
 
     # Add extra target_atom basis set
     bash_cp_control = 'cp control.in control.in.new'
-    bash_add_basis = f'cat $SPECIES_DEFAULTS/light/*{target_atom}* >> control.in.new'
+    bash_add_basis = f'cat $SPECIES_DEFAULTS/light/*{target_atom}_default >> control.in.new'
     subprocess.run(bash_cp_control.split(), check=True, stdout=subprocess.DEVNULL)
     subprocess.run(bash_add_basis.split(), check=True, stdout=subprocess.DEVNULL)
 
