@@ -24,7 +24,6 @@ def read_ground_inp():
 
 def create_new_controls(target_atom, num_atom):
     """Write new directories and control files to calculate FOB."""
-
     ks_method = 'KS_method               serial\n'
     charge = 'charge                  1.0\n'
     cube = 'output                  cube spin_density\n'
@@ -48,34 +47,34 @@ def create_new_controls(target_atom, num_atom):
 
                 # Some error checking
                 if len(spl) > 1:
-                    if 'force_occupation_basis' == spl[0]:
-                        print('force_occupation_basis keyword already found in control.in')
-                        exit(1)
+                    continue
 
-                    if 'charge' == spl[0]:
-                        print('charge keyword already found in control.in')
-                        exit(1)
+                elif 'force_occupation_basis' == spl[0]:
+                    print('force_occupation_basis keyword already found in control.in')
+                    exit(1)
+                elif 'charge' == spl[0]:
+                    print('charge keyword already found in control.in')
+                    exit(1)
+                elif 'output' == spl[0] and \
+                   'cube' == spl[1] and \
+                   'spin_density' == spl[2]:
+                    print('spin_density cube output already specelified in control.in')
 
-                    if 'output' == spl[0] and \
-                       'cube' == spl[1] and \
-                       'spin_density' == spl[2]:
-                        print('spin_density cube output already specified in control.in')
-
-                    # Change keyword lines
-                    if 'KS_method' in spl:
-                        content[i] = ks_method
-                    if '#force_occupation_basis' in spl:
-                        content[i] = fob
-                    if '#' == spl[0] and 'force_occupation_basis' == spl[1]:
-                        content[i] = fob
-                    if '#charge' in spl:
-                        content[i] = charge
-                    if '#' == spl[0] and 'charge' == spl[1]:
-                        content[i] = charge
-                    if line.strip() == '#output                  cube spin_density':
-                        content[i] = cube
-                    if '#' == spl[0] and 'output' == spl[1]:
-                        content[i] = cube
+                # Change keyword lines
+                elif 'KS_method' in spl:
+                    content[i] = ks_method
+                elif '#force_occupation_basis' in spl:
+                    content[i] = fob
+                elif '#' == spl[0] and 'force_occupation_basis' == spl[1]:
+                    content[i] = fob
+                elif '#charge' in spl:
+                    content[i] = charge
+                elif '#' == spl[0] and 'charge' == spl[1]:
+                    content[i] = charge
+                elif line.strip() == '#output                  cube spin_density':
+                    content[i] = cube
+                elif '#' == spl[0] and 'output' == spl[1]:
+                    content[i] = cube
 
             # Check if parameters not found
             no_ks = False

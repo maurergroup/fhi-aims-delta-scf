@@ -4,6 +4,7 @@
 
 import os
 import shutil
+import subprocess
 
 
 def read_ground_inp():
@@ -33,6 +34,12 @@ def create_init_files(target_atom, num_atom):
     charge = 'charge                  0.1\n'
     output_mull = '# output                 mulliken\n'
     output_hirsh = '# output                 hirshfeld\n'
+
+    found_target_atom = False
+
+    # Add extra target_atom basis set
+    bash_cmd = f'cat $SPECIES_DEFAULTS/light/*{target_atom}* >> control.in'
+    subprocess.run(bash_cmd.split())
 
     for i in range(num_atom):
         i += 1
@@ -71,37 +78,44 @@ def create_init_files(target_atom, num_atom):
             for j, line in enumerate(control_content):
                 spl = line.split()
 
-                # Some error checking
                 if len(spl) > 1:
-                    if 'restart' == spl[0]:
-                        print('restart keyword already found in control.in')
-                        exit(1)
+                    continue
 
-                    if 'charge' == spl[0]:
-                        print('charge keyword already found in control.in')
-                        exit(1)
+                # Some error checking
+                elif 'restart' == spl[0]:
+                    print('restart keyword already found in control.in')
+                    exit(1)
+                elif 'charge' == spl[0]:
+                    print('charge keyword already found in control.in')
+                    exit(1)
 
-                    # Change keyword lines
-                    if 'sc_iter_limit' in spl:
-                        control_content[j] = iter_limit
-                    if 'sc_init_iter' in spl:
-                        control_content[j] = init_iter
-                    if 'KS_method' in spl:
-                        control_content[j] = ks_method
-                    if 'restart_write_only' in spl:
-                        control_content[j] = restart_file
-                    if 'restart_save_iterations' in spl:
-                        control_content[j] = restart_save
-                    if 'force_single_restartfile' in spl:
-                        control_content[j] = restart_force
-                    if '#charge' in spl:
-                        control_content[j] = charge
-                    if '#' == spl[0] and 'charge' == spl[1]:
-                        control_content[j] = charge
-                    if 'output' == spl[0] and 'mulliken' == spl[1]:
-                        control_content[j] = output_mull
-                    if 'output' == spl[0] and 'hirshfeld' == spl[1]:
-                        control_content[j] = output_hirsh
+                # Fix basis sets
+                elif 'species' == spl[0] and target_atom == spl[1]:
+                    if found_target_atom is False:
+                        control_content[j] = f'  species        {target_atom}1'
+                        found_target_atom = True
+
+                # Change keyword lines
+                elif 'sc_iter_limit' in spl:
+                    control_content[j] = iter_limit
+                elif 'sc_init_iter' in spl:
+                    control_content[j] = init_iter
+                elif 'KS_method' in spl:
+                    control_content[j] = ks_method
+                elif 'restart_write_only' in spl:
+                    control_content[j] = restart_file
+                elif 'restart_save_iterations' in spl:
+                    control_content[j] = restart_save
+                elif 'force_single_restartfile' in spl:
+                    control_content[j] = restart_force
+                elif '#charge' in spl:
+                    control_content[j] = charge
+                elif '#' == spl[0] and 'charge' == spl[1]:
+                    control_content[j] = charge
+                elif 'output' == spl[0] and 'mulliken' == spl[1]:
+                    control_content[j] = output_mull
+                elif 'output' == spl[0] and 'hirshfeld' == spl[1]:
+                    control_content[j] = output_hirsh
 
             # Check if parameters not found
             no_iter_limit = False
@@ -164,55 +178,52 @@ def create_hole_files(target_atom, num_atom):
             for j, line in enumerate(control_content):
                 spl = line.split()
 
-                # Some error checking
                 if len(spl) > 1:
-                    if 'sc_init_iter' == spl[0]:
-                        print('sc_init_iter keyword already found in init/control.in')
-                        exit(1)
+                    continue
 
-                    if 'restart_read_only' == spl[0]:
-                        print('restart_read_only keyword already found in init/control.in')
-                        exit(1)
+                # Some error checking
+                elif 'sc_init_iter' == spl[0]:
+                    print('sc_init_iter keyword already found in init/control.in')
+                    exit(1)
+                elif 'restart_read_only' == spl[0]:
+                    print('restart_read_only keyword already found in init/control.in')
+                    exit(1)
+                elif 'force_occupation_projector' == spl[0]:
+                    print('force_occupation_projector keyword already found in init/control.in')
+                    exit(1)
+                elif 'output' == spl[0] and 'cube' == spl[1] and 'spin_density' == spl[2]:
+                    print('output cube spin_density already found in init/control.in')
+                    exit(1)
+                elif 'output' == spl[0] and 'mulliken' == spl[1]:
+                    print('output mulliken already found in init/control.in')
+                    exit(1)
+                elif 'output' == spl[0] and 'hirshfeld' == spl[1]:
+                    print('output hirshfeld already found in init/control.in')
+                    exit(1)
 
-                    if 'force_occupation_projector' == spl[0]:
-                        print('force_occupation_projector keyword already found in init/control.in')
-                        exit(1)
-
-                    if 'output' == spl[0] and 'cube' == spl[1] and 'spin_density' == spl[2]:
-                        print('output cube spin_density already found in init/control.in')
-                        exit(1)
-
-                    if 'output' == spl[0] and 'mulliken' == spl[1]:
-                        print('output mulliken already found in init/control.in')
-                        exit(1)
-
-                    if 'output' == spl[0] and 'hirshfeld' == spl[1]:
-                        print('output hirshfeld already found in init/control.in')
-                        exit(1)
-
-                    # Change keyword lines
-                    if 'sc_iter_limit' in spl:
-                        control_content[j] = iter_limit
-                    if '#sc_init_iter' in spl:
-                        control_content[j] = init_iter
-                    if '#' == spl[0] and 'sc_init_iter' == spl[1]:
-                        control_content[j] = init_iter
-                    if 'KS_method' in spl:
-                        control_content[j] = ks_method
-                    if 'restart' == spl[0]:
-                        control_content[j] = restart
-                    if '#force_occupation_projector' == spl[0]:
-                        control_content[j] = fop
-                    if '#' == spl[0] and 'force_occupation_projector' == spl[1]:
-                        control_content[j] = fop
-                    if 'charge' in spl:
-                        control_content[j] = charge
-                    if ['#output', 'cube', 'spin_density'] == spl or ['#', 'output', 'cube', 'spin_density'] == spl:
-                        control_content[j] = output_cube
-                    if ['#output', 'hirshfeld'] == spl or ['#', 'output', 'hirshfeld'] == spl:
-                        control_content[j] = output_hirsh
-                    if ['#output', 'mulliken'] == spl or ['#', 'output', 'mulliken'] == spl:
-                        control_content[j] = output_mull
+                # Change keyword lines
+                elif 'sc_iter_limit' in spl:
+                    control_content[j] = iter_limit
+                elif '#sc_init_iter' in spl:
+                    control_content[j] = init_iter
+                elif '#' == spl[0] and 'sc_init_iter' == spl[1]:
+                    control_content[j] = init_iter
+                elif 'KS_method' in spl:
+                    control_content[j] = ks_method
+                elif 'restart' == spl[0]:
+                    control_content[j] = restart
+                elif '#force_occupation_projector' == spl[0]:
+                    control_content[j] = fop
+                elif '#' == spl[0] and 'force_occupation_projector' == spl[1]:
+                    control_content[j] = fop
+                elif 'charge' in spl:
+                    control_content[j] = charge
+                elif ['#output', 'cube', 'spin_density'] == spl or ['#', 'output', 'cube', 'spin_density'] == spl:
+                    control_content[j] = output_cube
+                elif ['#output', 'hirshfeld'] == spl or ['#', 'output', 'hirshfeld'] == spl:
+                    control_content[j] = output_hirsh
+                elif ['#output', 'mulliken'] == spl or ['#', 'output', 'mulliken'] == spl:
+                    control_content[j] = output_mull
 
             # Check if parameters not found
             no_init_iter = False
