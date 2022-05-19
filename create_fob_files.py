@@ -42,39 +42,38 @@ def create_new_controls(target_atom, num_atom):
             content = read_control.readlines()
 
             # Replace specific lines
-            for i, line in enumerate(content):
+            for j, line in enumerate(content):
                 spl = line.split()
 
                 # Some error checking
-                if len(spl) < 2:
-                    continue
+                if len(spl) > 1:
 
-                elif 'force_occupation_basis' == spl[0]:
-                    print('force_occupation_basis keyword already found in control.in')
-                    exit(1)
-                elif 'charge' == spl[0]:
-                    print('charge keyword already found in control.in')
-                    exit(1)
-                elif 'output' == spl[0] and \
-                   'cube' == spl[1] and \
-                   'spin_density' == spl[2]:
-                    print('spin_density cube output already specelified in control.in')
+                    if 'force_occupation_basis' == spl[0]:
+                        print('force_occupation_basis keyword already found in control.in')
+                        exit(1)
+                    if 'charge' == spl[0]:
+                        print('charge keyword already found in control.in')
+                        exit(1)
+                    if 'output' == spl[0] and \
+                       'cube' == spl[1] and \
+                       'spin_density' == spl[2]:
+                        print('spin_density cube output already specified in control.in')
 
-                # Change keyword lines
-                elif 'KS_method' in spl:
-                    content[i] = ks_method
-                elif '#force_occupation_basis' in spl:
-                    content[i] = fob
-                elif '#' == spl[0] and 'force_occupation_basis' == spl[1]:
-                    content[i] = fob
-                elif '#charge' in spl:
-                    content[i] = charge
-                elif '#' == spl[0] and 'charge' == spl[1]:
-                    content[i] = charge
-                elif line.strip() == '#output                  cube spin_density':
-                    content[i] = cube
-                elif '#' == spl[0] and 'output' == spl[1]:
-                    content[i] = cube
+                    # Change keyword lines
+                    if 'KS_method' in spl:
+                        content[j] = ks_method
+                    if '#force_occupation_basis' in spl:
+                        content[j] = fob
+                    if '#' == spl[0] and 'force_occupation_basis' == spl[1]:
+                        content[j] = fob
+                    if '#charge' in spl:
+                        content[j] = charge
+                    if '#' == spl[0] and 'charge' == spl[1]:
+                        content[j] = charge
+                    if line.strip() == '#output                  cube spin_density':
+                        content[j] = cube
+                    if '#' == spl[0] and 'output' == spl[1]:
+                        content[j] = cube
 
             # Check if parameters not found
             no_ks = False
