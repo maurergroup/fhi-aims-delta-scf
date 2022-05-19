@@ -38,13 +38,15 @@ def create_init_files(target_atom, num_atom):
     found_target_atom = False
 
     # Add extra target_atom basis set
-    bash_cmd = f'cat $SPECIES_DEFAULTS/light/*{target_atom}* >> control.in'
-    subprocess.run(bash_cmd.split())
+    bash_cp_control = 'cp control.in control.in.new'
+    bash_add_basis = f'cat $SPECIES_DEFAULTS/light/*{target_atom}* >> control.in.new'
+    subprocess.run(bash_cp_control.split(), check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(bash_add_basis.split(), check=True, stdout=subprocess.DEVNULL)
 
     for i in range(num_atom):
         i += 1
         os.makedirs(f'../{target_atom}{i}/init')
-        shutil.copyfile('control.in', f'../{target_atom}{i}/init/control.in')
+        shutil.copyfile('control.in.new', f'../{target_atom}{i}/init/control.in')
         shutil.copyfile('geometry.in', f'../{target_atom}{i}/init/geometry.in')
         shutil.copyfile('restart_file', f'../{target_atom}{i}/init/restart_file')
 
@@ -78,7 +80,7 @@ def create_init_files(target_atom, num_atom):
             for j, line in enumerate(control_content):
                 spl = line.split()
 
-                if len(spl) > 1:
+                if len(spl) < 2:
                     continue
 
                 # Some error checking
@@ -178,7 +180,7 @@ def create_hole_files(target_atom, num_atom):
             for j, line in enumerate(control_content):
                 spl = line.split()
 
-                if len(spl) > 1:
+                if len(spl) < 2:
                     continue
 
                 # Some error checking

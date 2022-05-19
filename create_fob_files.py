@@ -46,7 +46,7 @@ def create_new_controls(target_atom, num_atom):
                 spl = line.split()
 
                 # Some error checking
-                if len(spl) > 1:
+                if len(spl) < 2:
                     continue
 
                 elif 'force_occupation_basis' == spl[0]:
