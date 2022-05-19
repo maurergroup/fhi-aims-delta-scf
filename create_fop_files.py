@@ -5,6 +5,7 @@
 import os
 import shutil
 import subprocess
+import glob
 
 
 def read_ground_inp():
@@ -35,13 +36,13 @@ def create_init_files(target_atom, num_atom):
     output_mull = '# output                 mulliken\n'
     output_hirsh = '# output                 hirshfeld\n'
 
-    found_target_atom = False
-
     # Add extra target_atom basis set
-    bash_cp_control = 'cp control.in control.in.new'
-    bash_add_basis = f'cat $SPECIES_DEFAULTS/light/*{target_atom}_default >> control.in.new'
-    subprocess.run(bash_cp_control.split(), check=True, stdout=subprocess.DEVNULL)
-    subprocess.run(bash_add_basis.split(), check=True, shell=True stdout=subprocess.DEVNULL)
+    shutil.copyfile('control.in', 'control.in.new')
+    basis_set = glob.glob(f'{os.environ["SPECIES_DEFAULTS"]}/light/*{target_atom}_default')
+    bash_add_basis = f'cat {basis_set[0]}'
+
+    new_control = open('control.in.new', 'a')
+    subprocess.run(bash_add_basis.split(), check=True, stdout=new_control)
 
     for i in range(num_atom):
         i += 1
@@ -79,6 +80,7 @@ def create_init_files(target_atom, num_atom):
             # Replace specific lines
             for j, line in enumerate(control_content):
                 spl = line.split()
+                found_target_atom = False
 
                 if len(spl) < 2:
                     continue
@@ -94,7 +96,7 @@ def create_init_files(target_atom, num_atom):
                 # Fix basis sets
                 elif 'species' == spl[0] and target_atom == spl[1]:
                     if found_target_atom is False:
-                        control_content[j] = f'  species        {target_atom}1'
+                        control_content[j] = f'  species        {target_atom}1\n'
                         found_target_atom = True
 
                 # Change keyword lines
