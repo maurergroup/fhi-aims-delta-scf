@@ -1,19 +1,19 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 
+
 def read_ground():
     """Get the ground state energy."""
-    grenrgys = []
-
     with open('ground/aims.out', 'r') as ground:
         for line in ground:
 
             # Get the energy
             if 's.c.f. calculation      :' in line:
-                grenrgys.append(float(get_energy_level(line)))
+                grenrgys = float(get_energy_level(line))
 
-    print('Ground state calculated energy (eV):', *grenrgys, sep='\n')
+    print('Ground state calculated energy (eV):')
+    print(grenrgys)
     print()
 
     return grenrgys
@@ -33,7 +33,6 @@ def contains_number(string):
     for character in string:
         if character.isdigit():
             return True
-    return False
 
 
 def read_atoms(get_energy_level, contains_number):
@@ -49,7 +48,7 @@ def read_atoms(get_energy_level, contains_number):
         if element in directory and contains_number(directory) is True:
             atom_counter += 1
 
-            with open(directory + '/aims.out', 'r') as out:
+            with open(directory + '/hole/aims.out', 'r') as out:
                 for line in out:
 
                     # Get the energy
@@ -61,12 +60,12 @@ def read_atoms(get_energy_level, contains_number):
     return element, atom_counter, excienrgys
 
 
-def calc_delta_scf(element, atom_counter, grenrgys, excienrgys):
+def calc_delta_scf(element, grenrgys, excienrgys):
     """Calculate delta scf and write to a file."""
     xps = []
 
-    for i, j in zip(grenrgys, excienrgys):
-        xps.append(i - j)
+    for i in excienrgys:
+        xps.append(i - grenrgys)
 
     with open(element + '_xps_peaks.txt', 'w') as file:
         for i in xps:
@@ -76,4 +75,4 @@ def calc_delta_scf(element, atom_counter, grenrgys, excienrgys):
 if __name__ == '__main__':
     grenrgys = read_ground()
     element, atom_counter, excienrgys = read_atoms(get_energy_level, contains_number)
-    calc_delta_scf(element, atom_counter, grenrgys, excienrgys)
+    calc_delta_scf(element, grenrgys, excienrgys)
