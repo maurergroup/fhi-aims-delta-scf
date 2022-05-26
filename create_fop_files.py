@@ -171,7 +171,7 @@ def create_hole_files(target_atom, num_atom):
                         f'../{target_atom}{i}/hole/geometry.in')
         shutil.copyfile(f'../{target_atom}{i}/init/control.in',
                         f'../{target_atom}{i}/hole/control.in')
-        shutil.copyfile(f'../{target_atom}{i}/hole/restart_file',
+        shutil.copyfile(f'../{target_atom}{i}/init/restart_file',
                         f'../{target_atom}{i}/hole/restart_file')
 
         control = f'../{target_atom}{i}/hole/control.in'
