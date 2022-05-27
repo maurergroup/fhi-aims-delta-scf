@@ -32,6 +32,7 @@ def contains_number(string):
     for character in string:
         if character.isdigit():
             return True
+
     return False
 
 
@@ -43,10 +44,8 @@ def read_atoms(get_energy_level, contains_number):
     excienrgys = []
 
     # Read each core hole dir
-    atom_counter = 0
     for directory in dir_list:
         if element in directory and contains_number(directory) is True:
-            atom_counter += 1
 
             with open(directory + '/aims.out', 'r') as out:
                 for line in out:
@@ -57,10 +56,10 @@ def read_atoms(get_energy_level, contains_number):
 
     print('Core hole calculated energies (eV):', *excienrgys, sep='\n')
 
-    return element, atom_counter, excienrgys
+    return element, excienrgys
 
 
-def calc_delta_scf(element, atom_counter, grenrgys, excienrgys):
+def calc_delta_scf(element, grenrgys, excienrgys):
     """Calculate delta scf and write to a file."""
     xps = []
 
@@ -74,5 +73,5 @@ def calc_delta_scf(element, atom_counter, grenrgys, excienrgys):
 
 if __name__ == '__main__':
     grenrgys = read_ground()
-    element, atom_counter, excienrgys = read_atoms(get_energy_level, contains_number)
-    calc_delta_scf(element, atom_counter, grenrgys, excienrgys)
+    element, excienrgys = read_atoms(get_energy_level, contains_number)
+    calc_delta_scf(element, grenrgys, excienrgys)
