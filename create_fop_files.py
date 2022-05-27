@@ -64,8 +64,8 @@ def create_init_files(target_atom, num_atom):
             for j, line in enumerate(geom_content):
                 spl = line.split()
 
-                if 'atom' and target_atom in line:
-                    if atom_counter == i:
+                if 'atom' in line and target_atom in line:
+                    if atom_counter + 1 == i:
                         partial_hole_atom = f' {target_atom}1\n'
                         geom_content[j] = ' '.join(spl[0:-1]) + partial_hole_atom
 
