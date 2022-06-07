@@ -23,8 +23,82 @@ def read_ground_inp():
 
     return target_atom, atom_counter
 
+def get_electronic_structure(target_atom):
+    """Get valence electronic structure of target atom"""
+    # Adapted from scipython.com question P2.5.12
 
-def create_init_files(target_atom, num_atom):
+    # All element symbols up to Rf
+    element_symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
+                       'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K',
+                       'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni',
+                       'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb',
+                       'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd',
+                       'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs',
+                       'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd',
+                       'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta',
+                       'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb',
+                       'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa',
+                       'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es']
+
+    atom_index = element_symbols.index(str(target_atom)) + 1
+
+    # Letters identifying subshells
+    l_letter = ['s', 'p', 'd', 'f', 'g']
+
+    def get_config_str(config):
+        """Turn a list of orbital, nelec pairs into a configuration string."""
+        return '.'.join(['{:2s}{:d}'.format(*e) for e in config])
+
+    # Create and order a list of tuples, (n+l, n, l), corresponding to the order
+    # in which the corresponding orbitals are filled using the Madelung rule.
+    nl_pairs = []
+    for n in range(1,8):
+        for l in range(n):
+            nl_pairs.append((n+l, n, l))
+    nl_pairs.sort()
+
+    # inl indexes the subshell in the nl_pairs list; nelec is the number of
+    # electrons currently inhabiting this subshell
+    inl, nelec = 0, 0
+    # start with the 1s orbital
+    n, l = 1, 0
+    # a list of orbitals and the electrons they contain for a configuration
+    config = [['1s', 0]]
+    # Store the most recent Noble gas configuration encountered in a tuple with the
+    # corresponding element symbol
+    noble_gas_config = ('', '')
+
+    for i, _ in enumerate(element_symbols[:atom_index]):
+        nelec += 1
+
+        if nelec > 2*(2*l+1):
+            # this subshell is now full
+            if l == 1:
+                # The most recent configuration was for a Noble gas: store it
+                noble_gas_config = (get_config_str(config),
+                                    '[{}]'.format(element_symbols[i-1]))
+            # Start a new subshell
+            inl += 1
+            _, n, l = nl_pairs[inl]
+            config.append(['{}{}'.format(n, l_letter[l]), 1])
+            nelec = 1
+        else:
+            # add an electron to the current subshell
+            config[-1][1] += 1
+
+        # Turn config into a string
+        s_config = get_config_str(config)
+        # Replace the heaviest Noble gas configuration with its symbol
+        s_config = s_config.replace(*noble_gas_config)
+        # print('{:2s}: {}'.format(element, s_config))
+
+    output = list(s_config.split('.').pop(-1))
+    valence = f'    valence      {output[0]}  {output[1]}   {output[2]}.1\n'
+
+    return atom_index, valence
+
+
+def create_init_files(target_atom, num_atom, at_num, atom_valence):
     """Write new init directories and control files to calculate FOP."""
     iter_limit = 'sc_iter_limit           1\n'
     init_iter = '# sc_init_iter          75\n'
@@ -149,10 +223,37 @@ def create_init_files(target_atom, num_atom):
             if no_charge is True:
                 write_control.write(charge)
 
+        # Add 0.1 charge
+        with open(control, 'r') as read_control:
+            control_content = read_control.readlines()
+
+            # Replace specific lines
+            for j, line in enumerate(control_content):
+                spl = line.split()
+
+                if target_atom + '1' in spl:
+                    # Add to nucleus
+                    if f'    nucleus             {at_num}\n' in control_content[j:]:
+                        n_index = control_content[j:].index(f'    nucleus             {at_num}\n') + j
+                        nucleus = control_content[n_index]  # save for hole
+                        control_content[n_index] = f'    nucleus             {at_num}.1\n'
+
+                    # Add to valence orbital
+                    if '#     ion occupancy\n' in control_content[j:]:
+                        v_index = control_content[j:].index('#     ion occupancy\n') + j
+                        valence = control_content[v_index - 1]  # save for hole
+                        control_content[v_index - 1] = atom_valence
+                        break
+
+        with open(control, 'w+') as write_control:
+            write_control.writelines(control_content)
+
     print('init files written successfully')
 
+    return nucleus, valence, n_index, v_index
 
-def create_hole_files(target_atom, num_atom):
+
+def create_hole_files(target_atom, num_atom, nucleus, valence, n_index, v_index):
     """Write new hole directories and control files to calculate FOP."""
     iter_limit = 'sc_iter_limit           250\n'
     init_iter = 'sc_init_iter            75\n'
@@ -180,6 +281,10 @@ def create_hole_files(target_atom, num_atom):
             # Replace specific lines
             for j, line in enumerate(control_content):
                 spl = line.split()
+
+                # Set nuclear and valence orbitals back to integer values
+                control_content[n_index] = nucleus
+                control_content[v_index - 1] = valence
 
                 if len(spl) > 1:
                     # Some error checking
@@ -270,5 +375,6 @@ def create_hole_files(target_atom, num_atom):
 
 if __name__ == '__main__':
     target_atom, num_atom = read_ground_inp()
-    create_init_files(target_atom, num_atom)
-    create_hole_files(target_atom, num_atom)
+    at_num, valence_orbs = get_electronic_structure(target_atom)
+    nucleus, valence, n_index, v_index = create_init_files(target_atom, num_atom, at_num, valence_orbs)
+    create_hole_files(target_atom, num_atom, nucleus, valence, n_index, v_index)
