@@ -8,8 +8,9 @@ def copy_restart():
     atom = str(input('Enter atom: '))
 
     for dir in glob.glob(f'{atom}*'):
-        shutil.copyfile(f'{dir}/init/restart_file',
-                        f'{dir}/hole/restart_file')
+        for restart in glob.glob('/init/restart_file*'):
+            shutil.copyfile(f'{dir}/init/{restart}',
+                            f'{dir}/hole/{restart}')
 
 
 if __name__ == "__main__":
