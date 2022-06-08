@@ -124,7 +124,9 @@ def create_init_files(target_atom, num_atom, at_num, atom_valence):
         os.makedirs(f'../{target_atom}{i}/init')
         shutil.copyfile('control.in.new', f'../{target_atom}{i}/init/control.in')
         shutil.copyfile('geometry.in', f'../{target_atom}{i}/init/geometry.in')
-        shutil.copyfile('restart_file', f'../{target_atom}{i}/init/restart_file')
+
+        for restart in glob.glob('restart_file*'):
+            shutil.copyfile(restart, f'../{target_atom}{i}/init/{restart}')
 
         found_target_atom = False
         control = f'../{target_atom}{i}/init/control.in'
