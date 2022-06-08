@@ -111,8 +111,9 @@ def create_init_files(target_atom, num_atom, at_num, atom_valence):
     output_hirsh = '# output                 hirshfeld\n'
 
     # Add extra target_atom basis set
+    basis_set = str(input('Enter the species default basis set level: '))
     shutil.copyfile('control.in', 'control.in.new')
-    basis_set = glob.glob(f'{os.environ["SPECIES_DEFAULTS"]}/light/*{target_atom}_default')
+    basis_set = glob.glob(f'{os.environ["SPECIES_DEFAULTS"]}/{basis_set}/*{target_atom}_default')
     bash_add_basis = f'cat {basis_set[0]}'
 
     new_control = open('control.in.new', 'a')
