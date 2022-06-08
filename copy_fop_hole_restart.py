@@ -8,7 +8,8 @@ def copy_restart():
     atom = str(input('Enter atom: '))
 
     for dir in glob.glob(f'{atom}*'):
-        for restart in glob.glob('/init/restart_file*'):
+        for file in glob.glob(f'{dir}/init/restart_file*'):
+            restart = file.split('/')[-1]
             shutil.copyfile(f'{dir}/init/{restart}',
                             f'{dir}/hole/{restart}')
 
