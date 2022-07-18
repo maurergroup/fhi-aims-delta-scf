@@ -5,7 +5,7 @@ import os
 
 def read_ground():
     """Get the ground state energy."""
-    with open('ground/aims.out', 'r') as ground:
+    with open('ground/aims.out', 'r', encoding='utf-8') as ground:
         for line in ground:
 
             # Get the energy
@@ -48,7 +48,7 @@ def read_atoms(get_energy_level, contains_number):
         if element in directory and contains_number(directory) is True:
             atom_counter += 1
 
-            with open(directory + '/hole/aims.out', 'r') as out:
+            with open(directory + '/hole/aims.out', 'r', encoding='utf-8') as out:
                 for line in out:
 
                     # Get the energy
