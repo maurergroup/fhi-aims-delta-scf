@@ -303,7 +303,6 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
 
     iter_limit = 'sc_iter_limit             1\n'
     restart_file = 'restart             restart_file\n'
-    restart_save = '# restart_save_iterations 20\n'
     restart_force = '# force_single_restartfile .true.\n'
     charge = 'charge                    1.1\n'
     fop = f'force_occupation_projector {ks_states[0]} 1 0.0 {ks_states[0]} {ks_states[1]}\n'
@@ -325,7 +324,6 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
 
         found_target_atom = False
         control = f'../{target_atom}{i}/init_2/control.in'
-        geometry = f'../{target_atom}{i}/init_2/geometry.in'
 
         # Change control file
         with open(control, 'r') as read_control:
@@ -347,8 +345,6 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
                         control_content[j] = iter_limit
                     if 'restart_write_only' in spl:
                         control_content[j] = restart_file
-                    if 'restart_save_iterations' in spl:
-                        control_content[j] = restart_save
                     if 'force_single_restartfile' in spl:
                         control_content[j] = restart_force
                     if '#force_occupation_projector' == spl[0]:
