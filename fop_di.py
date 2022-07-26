@@ -145,6 +145,7 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
     restart_save = 'restart_save_iterations   20\n'
     restart_force = '# force_single_restartfile  .true.\n'
     charge = 'charge                    0.1\n'
+    output_cube = 'output                  cube spind_density\n'
     output_mull = '# output                  mulliken\n'
     output_hirsh = '# output                  hirshfeld\n'
 
@@ -225,6 +226,8 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
                         control_content[j] = charge
                     if '#' == spl[0] and 'charge' == spl[1]:
                         control_content[j] = charge
+                    if 'cube spin_density' in spl:
+                        control_content[j] = output_cube
                     if 'output' == spl[0] and 'mulliken' == spl[1]:
                         control_content[j] = output_mull
                     if 'output' == spl[0] and 'hirshfeld' == spl[1]:
@@ -235,6 +238,7 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
             no_ks = False
             no_restart = False
             no_charge = False
+            no_cube = False
 
             if iter_limit not in control_content:
                 no_iter_limit = True
@@ -244,6 +248,8 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
                 no_restart = True
             if charge not in control_content:
                 no_charge = True
+            if output_cube not in control_content:
+                no_cube = True
 
         # Write the data to the file
         with open(control, 'w+') as write_control:
@@ -258,6 +264,8 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
                 write_control.write(restart_file)
             if no_charge is True:
                 write_control.write(charge)
+            if no_cube is True:
+                write_control.write(output_cube)
 
         # Add 0.1 charge
         with open(control, 'r') as read_control:
@@ -306,8 +314,6 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
     restart_force = '# force_single_restartfile .true.\n'
     charge = 'charge                    1.1\n'
     fop = f'force_occupation_projector {ks_states[0]} 1 0.0 {ks_states[0]} {ks_states[1]}\n'
-    output_mull = '# output                 mulliken\n'
-    output_hirsh = '# output                 hirshfeld\n'
 
     if type(num_atom) == list:
         loop_iterator = num_atom
@@ -353,10 +359,6 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
                         control_content[j] = charge
                     if '#' == spl[0] and 'charge' == spl[1]:
                         control_content[j] = charge
-                    if 'output' == spl[0] and 'mulliken' == spl[1]:
-                        control_content[j] = output_mull
-                    if 'output' == spl[0] and 'hirshfeld' == spl[1]:
-                        control_content[j] = output_hirsh
 
             # Check if parameters not found
             no_iter_limit = False
