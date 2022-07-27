@@ -145,7 +145,7 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
     restart_save = 'restart_save_iterations   20\n'
     restart_force = '# force_single_restartfile  .true.\n'
     charge = 'charge                    0.1\n'
-    output_cube = 'output                  cube spind_density\n'
+    output_cube = 'output                  cube spin_density\n'
     output_mull = '# output                  mulliken\n'
     output_hirsh = '# output                  hirshfeld\n'
 
