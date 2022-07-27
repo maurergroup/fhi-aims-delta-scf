@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import glob
+import numpy as np
 
 
 def read_ground_inp():
@@ -132,6 +133,8 @@ def get_electronic_structure(target_atom):
 
     output = list(s_config.split('.').pop(-1))
     valence = f'    valence      {output[0]}  {output[1]}   {output[2]}.1\n'
+
+    print('valence =', valence)
 
     return atom_index, valence
 
@@ -288,9 +291,44 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
 
                     # Add to valence orbital
                     if '#     ion occupancy\n' in control_content[j:]:
-                        v_index = control_content[j:].index('#     ion occupancy\n') + j
-                        valence = control_content[v_index - 1]  # save for hole
-                        control_content[v_index - 1] = atom_valence
+                        vbs_index = control_content[j:].index('#     valence basis states\n') + j
+                        io_index = control_content[j:].index('#     ion occupancy\n') + j
+
+                        # Check which orbital to add 0.1 to
+                        principle_qns = np.array([])
+                        azimuthal_orbs = np.array([])
+                        azimuthal_qns = np.zeros(io_index - vbs_index - 1)
+                        azimuthal_refs = {
+                            's': 1,
+                            'p': 2,
+                            'd': 3,
+                            'f': 4
+                        }
+
+                        # Get azimuthal and principle quantum numbers
+                        for count, valence_orbital in enumerate(control_content[vbs_index+1:io_index]):
+                            principle_qns = np.append(principle_qns, np.array(valence_orbital.split()[1])).astype(int)
+                            azimuthal_orbs = np.append(azimuthal_orbs, np.array(valence_orbital.split()[2]))
+                            azimuthal_qns[count] = azimuthal_refs[azimuthal_orbs[count]]
+                            azimuthal_qns = azimuthal_qns.astype(int)
+
+                        # Find the orbital with highest principle and azimuthal qn
+                        highest_n = np.amax(principle_qns)
+                        highest_n_index = np.where(principle_qns == highest_n)
+
+                        # Check for highest l if 2 orbitals have the same n
+                        if len(highest_n_index) > 1:
+                            highest_l = np.amax(azimuthal_qns)
+                            highest_l_index = np.where(azimuthal_qns == highest_l)
+                            addition_state = np.intersect1d(highest_n_index, highest_l_index)[0]
+                        else:
+                            addition_state = highest_n_index[0][0]
+
+                        print(addition_state)
+
+                        # Add the 0.1 electron
+                        valence = control_content[vbs_index + addition_state + 1]  # save for write hole file
+                        control_content[vbs_index + addition_state + 1] = atom_valence
                         break
 
         with open(control, 'w+') as write_control:
