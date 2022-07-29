@@ -74,6 +74,7 @@ def read_ground_inp():
         return target_atom, atom_counter
 
     else:
+        print('Specified atoms:', atom_specifier)
         return target_atom, atom_specifier
 
 
@@ -339,7 +340,7 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
                         highest_n_index = np.where(principle_qns == highest_n)
 
                         # Check for highest l if 2 orbitals have the same n
-                        if len(highest_n_index) > 1:
+                        if len(highest_n_index[0]) > 1:
                             highest_l = np.amax(azimuthal_qns)
                             highest_l_index = np.where(azimuthal_qns == highest_l)
                             addition_state = np.intersect1d(highest_n_index, highest_l_index)[0]
