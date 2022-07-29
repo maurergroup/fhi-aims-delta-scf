@@ -27,34 +27,49 @@ def read_ground_inp():
         target_atom = str(input('Enter atom: '))
 
         if target_atom not in element_symbols:
-            print('Not an element! Please enter a valid element.')
+            print('\nNot an element! Please enter a valid element.')
         else:
             break
 
     print('Enter specific atom(s) to create a core hole (leave blank for all)')
     print('Enter atom numbers one at a time and press enter after each')
-    print('Enter a blank to indicate the end of the list')
+    print('Enter a blank to indicate the end of the list:')
 
     # Manually select atoms for core hole
-    try:
-        atom_specifier = []
-        while True:
-            atom_specifier.append(int(input()))
+    atom_specifier = []
 
-    except:
-        print('Specified atoms:', atom_specifier)
+    while True:
+        atom_input = input()
+
+        if atom_input == '':
+            break
+        else:
+            try:
+                atom_input = int(atom_input)
+                atom_specifier.append(atom_input)
+            except ValueError:
+                print('\nInvalid input! Ensure input is entered as an integer.')
+                print('Enter specific atom(s) to create a core hole (leave blank for all)')
+                print('Enter atom numbers one at a time and press enter after each')
+                print('Enter a blank to indicate the end of the list:')
 
     # Default to all atoms if specific atoms aren't specified
-    if atom_specifier == []:
+    if len(atom_specifier) == 0:
         with open('geometry.in', 'r') as geom_in:
             atom_counter = 0
 
             for line in geom_in:
-                element = line.split()[-1]  # Identify atom
-                identifier = line.split()[0]  # Extra check that line is an atom
+                spl = line.split()
 
-                if identifier == 'atom' and element == target_atom:
+                if len(spl) > 0 and 'atom' == spl[0]:
                     atom_counter += 1
+                    element = spl[-1]  # Identify atom
+                    identifier = spl[0]  # Extra check that line is an atom
+
+                    if identifier == 'atom' and element == target_atom:
+                        atom_specifier.append(atom_counter)
+
+        print('Specified atoms:', atom_specifier)
 
         return target_atom, atom_counter
 
@@ -134,8 +149,6 @@ def get_electronic_structure(target_atom):
     output = list(s_config.split('.').pop(-1))
     valence = f'    valence      {output[0]}  {output[1]}   {output[2]}.1\n'
 
-    print('valence =', valence)
-
     return atom_index, valence
 
 
@@ -153,7 +166,16 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
     output_hirsh = '# output                  hirshfeld\n'
 
     # Add extra target_atom basis set
-    basis_set = str(input('Enter the species default basis set level: '))
+    while True:
+        basis_set_opts = ['light', 'intermediate', 'tight', 'really_tight']
+        basis_set = str(input('Enter the species default basis set level: '))
+
+        if basis_set not in basis_set_opts:
+            print('Not a valid basis set option! The following basis set options are valid:')
+            print(*basis_set_opts, sep='    ')
+        else:
+            break
+
     shutil.copyfile('control.in', 'control.in.new')
     basis_set = glob.glob(f'{os.environ["SPECIES_DEFAULTS"]}/defaults_2020/{basis_set}/*{target_atom}_default')
     bash_add_basis = f'cat {basis_set[0]}'
@@ -324,11 +346,10 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
                         else:
                             addition_state = highest_n_index[0][0]
 
-                        print(addition_state)
-
                         # Add the 0.1 electron
                         valence = control_content[vbs_index + addition_state + 1]  # save for write hole file
-                        control_content[vbs_index + addition_state + 1] = atom_valence
+                        valence_index = vbs_index + addition_state + 1
+                        control_content[valence_index] = atom_valence
                         break
 
         with open(control, 'w+') as write_control:
@@ -336,16 +357,23 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
 
     print('init_1 files written successfully')
 
-    return nucleus, valence, n_index, v_index
+    return nucleus, valence, n_index, valence_index
 
 
-def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
+def create_init_2_files(target_atom, num_atom, at_num, atom_valence, n_index, valence_index):
     """Write new init directories and control files to calculate FOP."""
-    ks_states = []
+    ks_states = [0, 0]
     print()
     print('Enter KS start and KS stop states (press enter after each)')
-    ks_states.append(input('KS start: '))
-    ks_states.append(input('KS stop: '))
+
+    while True:
+        try:
+            ks_states[0] = int(input('KS start: '))
+            ks_states[1] = int(input('KS stop: '))
+            break
+        except ValueError:
+            print('\nInvalid input! Ensure input is entered as an integer.')
+            print('Enter KS start and KS stop states (press enter after each)')
 
     iter_limit = 'sc_iter_limit             1\n'
     restart_file = 'restart             restart_file\n'
@@ -433,19 +461,17 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
                 if target_atom + '1' in spl:
                     # Add to nucleus
                     if f'    nucleus             {at_num}\n' in control_content[j:]:
-                        n_index = control_content[j:].index(f'    nucleus             {at_num}\n') + j
                         nucleus = control_content[n_index]  # save for hole
                         control_content[n_index] = f'    nucleus             {at_num}.1\n'
                     elif f'    nucleus      {at_num}\n' in control_content[j:]:
-                        n_index = control_content[j:].index(f'    nucleus      {at_num}\n') + j
                         nucleus = control_content[n_index]  # save for hole
                         control_content[n_index] = f'    nucleus      {at_num}.1\n'
 
                     # Add to valence orbital
                     if '#     ion occupancy\n' in control_content[j:]:
-                        v_index = control_content[j:].index('#     ion occupancy\n') + j
-                        valence = control_content[v_index - 1]  # save for hole
-                        control_content[v_index - 1] = atom_valence
+
+                        # Add the 0.1 electron
+                        control_content[valence_index] = atom_valence
                         break
 
         with open(control, 'w+') as write_control:
@@ -453,10 +479,10 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence):
 
     print('init_2 files written successfully')
 
-    return ks_states, nucleus, valence, n_index, v_index
+    return ks_states
 
 
-def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_index, v_index):
+def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_index, valence_index):
     """Write new hole directories and control files to calculate FOP."""
     iter_limit = 'sc_iter_limit             1000\n'
     init_iter = 'sc_init_iter              75\n'
@@ -494,7 +520,7 @@ def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_inde
 
                 # Set nuclear and valence orbitals back to integer values
                 control_content[n_index] = nucleus
-                control_content[v_index - 1] = valence
+                control_content[valence_index] = valence
 
                 if len(spl) > 1:
 
@@ -567,6 +593,6 @@ def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_inde
 if __name__ == '__main__':
     target_atom, num_atom = read_ground_inp()
     at_num, valence_orbs = get_electronic_structure(target_atom)
-    nucleus, valence, n_index, v_index = create_init_1_files(target_atom, num_atom, at_num, valence_orbs)
-    ks_states, nucleus, valence, n_index, v_index = create_init_2_files(target_atom, num_atom, at_num, valence_orbs)
-    create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_index, v_index)
+    nucleus, valence, n_index, valence_index = create_init_1_files(target_atom, num_atom, at_num, valence_orbs)
+    ks_states = create_init_2_files(target_atom, num_atom, at_num, valence_orbs, n_index, valence_index)
+    create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_index, valence_index)
