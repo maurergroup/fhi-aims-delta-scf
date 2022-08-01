@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ $1 == '' ]]; then
+  echo 'No arguments specified'
+  exit 1
+fi
+
 read -p 'Enter atom: ' atom
 
 for dir in "$atom"*; do
