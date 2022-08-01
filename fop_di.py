@@ -393,7 +393,7 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence, n_index, va
 
         os.makedirs(f'../{target_atom}{i}/init_2')
         shutil.copyfile('control.in.new', f'../{target_atom}{i}/init_2/control.in')
-        shutil.copyfile('geometry.in', f'../{target_atom}{i}/init_2/geometry.in')
+        shutil.copyfile(f'../{target_atom}{i}/init_1/geometry.in', f'../{target_atom}{i}/init_2/geometry.in')
 
         found_target_atom = False
         control = f'../{target_atom}{i}/init_2/control.in'
