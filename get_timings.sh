@@ -8,24 +8,38 @@ if [[ $1 == '' ]]; then
   exit 1
 fi
 
-input_dirs=($1)
+for i in "$@"; do
+  input_dirs+=("$i")
+done
 
-for i in $input_dirs; do (
+echo "Specified directories: ${input_dirs[@]}"
+echo
+
+for i in "${input_dirs[@]}"; do (
   cd "$i"
-
   for j in *; do (
     if [ -d "$j" ]; then
       # If a directory, this is an excited state calculation
       atom="$i"
       run_type="$j"
       cd "$j"
+      # Find time taken in aims.out
+      time=$(tail -n 100 aims.out | grep '| Total time   ' | awk '{ print $5 }')
+      time_round=$(printf "%.0f\n" "$time")
+      time_h=$(echo "$time_round" / 60 | bc -l)
+      time_hr=$(printf "%.2f\n" "$time_h")
+      echo "$atom $run_type: $time_hr seconds"
 
-      time=$(tail -n 100 aims.out | grep -q '| Total time   ' | awk '{ printf("$d", $5) }')
-      echo "$atom $run_type: $time seconds"
-    else
+    elif [[ "$j" == "aims.out" ]]; then
       # This must be a ground state calculation
-      time=$(tail -n 100 aims.out | grep -q '| Total time   ' | awk '{ printf("$d", $5) }')
-      echo "ground: $time seconds"
+      # Find time taken in aims.out
+      time=$(tail -n 100 "$j" | grep '| Total time   ' | awk '{ print $5 }')
+      time_round=$(printf "%.0f\n" "$time")
+      time_h=$(echo "$time_round" / 60 | bc -l)
+      time_hr=$(printf "%.2f\n" "$time_h")
+      echo "ground: $time_round seconds"
+      echo "ground: $time_hr minutes"
+
     fi
   ) done
 ) done
