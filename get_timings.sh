@@ -28,7 +28,9 @@ for i in "${input_dirs[@]}"; do (
       time_round=$(printf "%.0f\n" "$time")
       time_h=$(echo "$time_round" / 60 | bc -l)
       time_hr=$(printf "%.2f\n" "$time_h")
+      echo "$atom $run_type: $time_round seconds"
       echo "$atom $run_type: $time_hr seconds"
+      echo
 
     elif [[ "$j" == "aims.out" ]]; then
       # This must be a ground state calculation
@@ -39,6 +41,7 @@ for i in "${input_dirs[@]}"; do (
       time_hr=$(printf "%.2f\n" "$time_h")
       echo "ground: $time_round seconds"
       echo "ground: $time_hr minutes"
+      echo
 
     fi
   ) done
