@@ -12,13 +12,20 @@ for i in "$@"; do
   input_dirs+=("$i")
 done
 
-echo "Specified directories: ${input_dirs[@]}"
+echo "Specified directories:" "${input_dirs[@]}"
 echo
 
-for i in "${input_dirs[@]}"; do (
+hole_times_sec=()
+hole_times_min=()
+init1_times_sec=()
+init1_times_min=()
+init2_times_sec=()
+init2_times_min=()
+
+for i in "${input_dirs[@]}"; do
   atom_counter+=1
   cd "$i"
-  for j in *; do (
+  for j in *; do
     if [ -d "$j" ]; then
       # If a directory, this is an excited state calculation
       atom="$i"
@@ -48,6 +55,7 @@ for i in "${input_dirs[@]}"; do (
     elif [[ "$j" == "aims.out" ]]; then
       # This must be a ground state calculation
       # Find time taken in aims.out
+      ground_state="true"
       time=$(tail -n 100 "$j" | grep '| Total time   ' | awk '{ print $5 }')
       time_round=$(printf "%.0f\n" "$time")
       time_h=$(echo "$time_round" / 60 | bc -l)
@@ -55,59 +63,48 @@ for i in "${input_dirs[@]}"; do (
       echo "ground: $time_round seconds"
       echo "ground: $time_hr minutes"
       echo
-
     fi
-  )
+
+    cd ../
   done
-)
+
+  cd ../
 done
 
-# Sum counters
-hole_sec_tot=0
-hole_min_tot=0
-init1_sec_tot=0
-init1_min_tot=0
-init2_sec_tot=0
-init2_min_tot=0
+if [[ "$ground_state" != "true" ]]; then
+  # Sum counters
+  hole_sec_tot=0
+  init1_sec_tot=0
+  init2_sec_tot=0
 
-# Calculate the sum of each array
-for i in "${hole_times_sec[@]}"; do
-  hole_sec_tot+=$i
-done
-for i in "${hole_times_min[@]}"; do
-  hole_min_tot+=$i
-done
-for i in "${init1_times_sec[@]}"; do
-  init1_sec_tot+=$i
-done
-for i in "${init1_times_min[@]}"; do
-  init1_min_tot+=$i
-done
-for i in "${init2_times_sec[@]}"; do
-  init2_sec_tot+=$i
-done
-for i in "${init2_times_min[@]}"; do
-  init2_min_tot+=$i
-done
+  # Calculate the sum of each array
+  for i in "${hole_times_sec[@]}"; do
+    ((hole_sec_tot+=i))
+  done
+  for i in "${init1_times_sec[@]}"; do
+    ((init1_sec_tot+=i))
+  done
+  for i in "${init2_times_sec[@]}"; do
+    ((init2_sec_tot+=i))
+  done
 
-# Calculate average times and round
-avg_hole_time_sec=$(echo "hole_sec_tot" / "${#hole_times_sec[@]}" | bc -l)
-round_hole_time_sec=$(printf "%.0f\n" "$avg_hole_time_sec")
-avg_hole_time_min=$(echo "hole_min_tot" / "${#hole_times_min[@]}" | bc -l)
-round_hole_time_min=$(printf "%.0f\n" "$avg_hole_time_min")
-avg_init1_time_sec=$(echo "init1_sec_tot" / "${#init1_times_sec[@]}" | bc -l)
-round_init1_time_sec=$(printf "%.0f\n" "$avg_init1_time_sec")
-avg_init1_time_min=$(echo "init1_min_tot" / "${#init1_times_min[@]}" | bc -l)
-round_init1_time_min=$(printf "%.0f\n" "$avg_init1_time_min")
-avg_init2_time_sec=$(echo "init2_sec_tot" / "${#init2_times_sec[@]}" | bc -l)
-round_init2_time_sec=$(printf "%.0f\n" "$avg_init2_time_sec")
-avg_init2_time_min=$(echo "init2_min_tot" / "${#init2_times_min[@]}" | bc -l)
-round_init2_time_min=$(printf "%.0f\n" "$avg_init2_time_min")
+  # Calculate average times and round
+  avg_hole_time_sec=$(echo "$hole_sec_tot" / "${#hole_times_sec[@]}" | bc -l)
+  round_hole_time_sec=$(printf "%.0f\n" "$avg_hole_time_sec")
+  avg_init1_time_sec=$(echo "$init1_sec_tot" / "${#init1_times_sec[@]}" | bc -l)
+  round_init1_time_sec=$(printf "%.0f\n" "$avg_init1_time_sec")
+  avg_init2_time_sec=$(echo "$init2_sec_tot" / "${#init2_times_sec[@]}" | bc -l)
+  round_init2_time_sec=$(printf "%.0f\n" "$avg_init2_time_sec")
 
-# Print the average rounded times
-echo "Average hole time: $round_hole_time_sec seconds"
-echo "Average hole time: $round_hole_time_min minutes"
-echo "Average init_1 time: $round_init1_time_sec seconds"
-echo "Average init_1 time: $round_init1_time_min minutes"
-echo "Average init_2 time: $round_init2_time_sec seconds"
-echo "Average init_2 time: $round_init2_time_min minutes"
+  round_hole_time_min=$(printf "%.2f\n" "$(echo "$round_hole_time_sec" / 60 | bc -l)")
+  round_init1_time_min=$(printf "%.2f\n" "$(echo "$round_init1_time_sec" / 60 | bc -l)")
+  round_init2_time_min=$(printf "%.2f\n" "$(echo "$round_init2_time_sec" / 60 | bc -l)")
+
+  # Print the average rounded times
+  echo "Average hole time: $round_hole_time_sec seconds"
+  echo "Average hole time: $round_hole_time_min minutes"
+  echo "Average init_1 time: $round_init1_time_sec seconds"
+  echo "Average init_1 time: $round_init1_time_min minutes"
+  echo "Average init_2 time: $round_init2_time_sec seconds"
+  echo "Average init_2 time: $round_init2_time_min minutes"
+fi
