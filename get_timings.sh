@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit if an error occurs
+set -e
+
 script_usage () {
   echo "Script Usage:"
   echo "1st argument: Time to parse from aims.out (options: scf or total)"
@@ -20,9 +23,10 @@ fi
 
 scf_timings () {
   # Read scf timings from aims.out and add to array
+  scf_times=()
   scf_times+=($(cat aims.out | grep '| Time for this iteration' | awk '{ print $7 }'))
 
-  # Initisalise counters and penultimate index of scf_times
+  # Initialise counters and penultimate index of scf_times
   iter_count_1=0
   iter_count_2=0
   scf_times_len_short=$(("${#scf_times[@]}" - 1))
@@ -45,6 +49,7 @@ scf_timings () {
   done
 
   # New array of stablised scf times
+  stab_scf_times=()
   stab_scf_times+=("${scf_times[@]:$stab_times_index}")
 
   # Sum all scf times
@@ -58,7 +63,7 @@ scf_timings () {
   round_stab_scf_time=$(printf "%.2f\n" "$avg_stab_scf_time")
 
   echo "$i $j"
-  # echo "${scf_times[@]:$stablised_times_index}"
+  echo "Number of SCF iterations averaged: ${#stab_scf_times[@]}"
   echo "Average time per SCF step: $round_stab_scf_time sec"
   echo
 }
@@ -74,13 +79,8 @@ echo
 # Go into directories and files to read timings
 for i in "${input_dirs[@]}"; do
   cd "$i"
-
   for j in *; do
     run_type="$j"
-    if [[ $1 == "scf" ]]; then
-      scf_times=()
-    fi
-
     if [ -d "$j" ]; then
       if [[ $1 == "total" ]]; then
         # If a directory, this is an excited state calculation
