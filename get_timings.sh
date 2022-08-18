@@ -24,33 +24,40 @@ fi
 scf_timings () {
   # Read scf timings from aims.out and add to array
   scf_times=()
-  scf_times+=($(cat aims.out | grep '| Time for this iteration' | awk '{ print $7 }'))
+  scf_times+=($(grep '| Time for this iteration' < aims.out | awk '{ print $7 }'))
 
-  # Initialise counters and penultimate index of scf_times
-  iter_count_1=0
-  iter_count_2=0
-  scf_times_len_short=$(("${#scf_times[@]}" - 1))
+  if (( "${#scf_times[@]}" >= 10 )); then
+    final_scf_steps=$(("${#scf_times[@]}" - 10))
 
-  # Difference between kth value and k+1 value
-  for k in "${scf_times[@]::$scf_times_len_short}"; do
-    iter_count_1=$((iter_count_1 + 1))
-    current_iter=$(echo "${scf_times[$iter_count_2]}")
-    next_iter=$(echo "${scf_times[$iter_count_1]}")
-    iter_diff=$(echo "$current_iter - $next_iter" | bc -l)
+    # New array of stablised scf times
+    stab_scf_times=("${scf_times[@]:$final_scf_steps}")
 
-    # Use values after first value where difference between scf values is
-    # less than 1
-    if (( $(echo "$iter_diff < 1" | bc -l) )); then
-      stab_times_index="$iter_count_2"
-      break
-    fi
+  else
+    # Initialise counters
+    iter_count_1=0
+    iter_count_2=0
+    final_scf_step=$(("${#scf_times[@]}" - 1))
 
-    iter_count_2=$((iter_count_2 + 1))
-  done
+    for k in "${scf_times[@]:$final_scf_step}"; do
+      iter_count_1=$((iter_count_1 + 1))
+      current_iter=$(echo "${scf_times[$iter_count_2]}")
+      next_iter=$(echo "${scf_times[$iter_count_1]}")
+      iter_diff=$(echo "$current_iter - $next_iter" | bc -l)
 
-  # New array of stablised scf times
-  stab_scf_times=()
-  stab_scf_times+=("${scf_times[@]:$stab_times_index}")
+      # Use values after first value where difference between scf values is
+      # less than 1
+      if (( $(echo "$iter_diff < 1" | bc -l) )); then
+        stab_times_index="$iter_count_1"
+        break
+      fi
+
+      iter_count_2=$((iter_count_2 + 1))
+    done
+
+    # New array of stablised scf times
+    stab_scf_times=()
+    stab_scf_times+=("${scf_times[@]:$stab_times_index}")
+  fi
 
   # Sum all scf times
   stab_scf_times_tot=0
@@ -116,7 +123,7 @@ for i in "${input_dirs[@]}"; do
       if [[ "$1" == "total" ]]; then
         # This must be a ground state calculation
         # Find time taken in aims.out
-        ground_state="true"
+        ground_calc="true"
         time=$(tail -n 100 "$j" | grep '| Total time   ' | awk '{ print $5 }')
         time_round=$(printf "%.0f\n" "$time")
         time_h=$(echo "$time_round" / 60 | bc -l)
@@ -135,7 +142,7 @@ for i in "${input_dirs[@]}"; do
   cd ../
 done
 
-if [[ "$1" == "total" && "$ground_state" != "true" ]]; then
+if [[ "$1" == "total" && "$ground_calc" != "true" ]]; then
   # Sum counters
   hole_sec_tot=0
   init1_sec_tot=0
@@ -172,4 +179,3 @@ if [[ "$1" == "total" && "$ground_state" != "true" ]]; then
   echo "Average init_2 time: $round_init2_time_sec seconds"
   echo "Average init_2 time: $round_init2_time_min minutes"
 fi
-

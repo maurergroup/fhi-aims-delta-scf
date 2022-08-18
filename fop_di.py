@@ -485,9 +485,12 @@ def create_init_2_files(target_atom, num_atom, at_num, atom_valence, n_index, va
 
 def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_index, valence_index):
     """Write new hole directories and control files to calculate FOP."""
-    iter_limit = 'sc_iter_limit             1000\n'
+    # occ_type = 'occupation_type         gaussian 0.1\n'
+    # iter_limit = 'sc_iter_limit             20\n'
     init_iter = 'sc_init_iter              75\n'
     ks_method = 'KS_method                serial\n'
+    # mixer = 'mixer                    pulay\n'
+    # charge_mix = 'charge_mix_param          0.02\n'
     restart = 'restart_read_only       restart_file\n'
     charge = 'charge                    1.0\n'
     fop = f'force_occupation_projector {ks_states[0]} 1 0.0 {ks_states[0]} {ks_states[1]}\n'
@@ -526,14 +529,18 @@ def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_inde
                 if len(spl) > 1:
 
                     # Change keyword lines
-                    if 'sc_iter_limit' in spl:
-                        control_content[j] = iter_limit
+                    # if 'occupation_type' in spl:
+                    #     control_content[j] = occ_type
+                    # if 'sc_iter_limit' in spl:
+                    #     control_content[j] = iter_limit
                     if '#sc_init_iter' in spl:
                         control_content[j] = init_iter
                     if '#' == spl[0] and 'sc_init_iter' == spl[1]:
                         control_content[j] = init_iter
                     if 'KS_method' in spl:
                         control_content[j] = ks_method
+                    # if 'mixer' in spl:
+                    #     control_content[j] = mixer
                     if 'restart' == spl[0]:
                         control_content[j] = restart
                     if '#force_occupation_projector' == spl[0]:
@@ -542,6 +549,8 @@ def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_inde
                         control_content[j] = fop
                     if 'charge' in spl:
                         control_content[j] = charge
+                    # if 'charge_mix_param' in spl:
+                    #     control_content[j] = charge_mix
                     if ['#output', 'cube', 'spin_density'] == spl or ['#', 'output', 'cube', 'spin_density'] == spl:
                         control_content[j] = output_cube
                     if ['#output', 'hirshfeld'] == spl or ['#', 'output', 'hirshfeld'] == spl:
@@ -550,19 +559,35 @@ def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_inde
                         control_content[j] = output_mull
 
             # Check if parameters not found
+            # no_occ_type = False
             no_init_iter = False
+            # no_iter_limit = False
+            # no_mixer = False
             no_restart = False
             no_fop = False
+            no_charge = False
+            # no_charge_mix = False
             no_output_cube = False
             no_output_mull = False
             no_output_hirsh = False
 
+            # TODO finish adding mixer stuff
+            # if occ_type not in control_content:
+            #     no_occ_type = True
+            # if iter_limit not in control_content:
+            #     no_iter_limit = True
             if init_iter not in control_content:
                 no_init_iter = True
+            # if mixer not in control_content:
+            #     no_mixer = True
             if restart not in control_content:
                 no_restart = True
             if fop not in control_content:
                 no_fop = True
+            if charge not in control_content:
+                no_charge = True
+            # if charge_mix not in control_content:
+            #     no_charge_mix = True
             if output_cube not in control_content:
                 no_output_cube = True
             if output_mull not in control_content:
@@ -575,12 +600,22 @@ def create_hole_files(ks_states, target_atom, num_atom, nucleus, valence, n_inde
             write_control.writelines(control_content)
 
             # Append parameters to end of file if not found
+            # if no_occ_type is True:
+            #     write_control.write(occ_type)
+            # if no_iter_limit is True:
+            #     write_control.write(iter_limit)
             if no_init_iter is True:
                 write_control.write(init_iter)
+            # if no_mixer is True:
+            #     write_control.write(mixer)
             if no_restart is True:
                 write_control.write(restart)
             if no_fop is True:
                 write_control.write(fop)
+            if no_charge is True:
+                write_control.write(charge)
+            # if no_charge_mix is True:
+            #     write_control.write(charge_mix)
             if no_output_cube is True:
                 write_control.write(output_cube)
             if no_output_mull is True:
