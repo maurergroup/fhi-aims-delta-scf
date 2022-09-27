@@ -61,7 +61,7 @@ def read_ground_inp():
             for line in geom_in:
                 spl = line.split()
 
-                if len(spl) > 0 and 'atom' == spl[0]:
+                if len(spl) > 0 and 'atom' == spl[0] and target_atom in line:
                     atom_counter += 1
                     element = spl[-1]  # Identify atom
                     identifier = spl[0]  # Extra check that line is an atom
@@ -159,7 +159,7 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
     init_iter = '# sc_init_iter          75\n'
     ks_method = 'KS_method                 serial\n'
     restart_file = 'restart_write_only        restart_file\n'
-    restart_save = 'restart_save_iterations   20\n'
+    restart_save = '# restart_save_iterations   20\n'
     restart_force = '# force_single_restartfile  .true.\n'
     charge = 'charge                    0.1\n'
     output_cube = 'output                  cube spin_density\n'
