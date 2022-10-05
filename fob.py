@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """Automate creation of files for FOB calculations in FHI-aims."""
 
 import os
@@ -33,9 +32,9 @@ def read_ground_inp():
     print('Enter atom numbers one at a time and press enter after each')
     print('Enter a blank to indicate the end of the list:')
 
+    # Manually select atoms for core hole
     atom_specifier = []
 
-    # Manually select atoms for core hole
     while True:
         atom_input = input()
 
@@ -52,52 +51,44 @@ def read_ground_inp():
                 print('Enter a blank to indicate the end of the list:')
 
     # Default to all atoms if specific atoms aren't specified
-    with open('geometry.in', 'r') as geom_in:
-        atom_counter = 0
+    if len(atom_specifier) == 0:
+        with open('geometry.in', 'r') as geom_in:
+            atom_counter = 0
 
-        first_iter = True
-        for line in geom_in:
-            spl = line.split()
+            for line in geom_in:
+                spl = line.split()
 
-            if len(spl) > 0 and 'atom' == spl[0] and target_atom in line:
-                atom_counter += 1
-                element = spl[-1]  # Identify atom
-                identifier = spl[0]  # Extra check that line is an atom
+                if len(spl) > 0 and 'atom' == spl[0] and target_atom in line:
+                    atom_counter += 1
+                    element = spl[-1]  # Identify atom
+                    identifier = spl[0]  # Extra check that line is an atom
 
-                if identifier == 'atom' and element == target_atom:
-
-                    if first_iter == True and len(atom_specifier) == 0:
-                        first_iter = False
-                        atom_specifier.append(atom_counter)
-                    elif first_iter == False:
+                    if identifier == 'atom' and element == target_atom:
                         atom_specifier.append(atom_counter)
 
-    # atom_specifier = [1,4,8,32,69,121]
-    print('Specified atoms:', atom_specifier)
-    return target_atom, atom_counter, atom_specifier
+        print('Specified atoms:', atom_specifier)
+
+        return target_atom, atom_counter
+
+    else:
+        print('Specified atoms:', atom_specifier)
+        return target_atom, atom_specifier
 
 
-def create_new_controls(target_atom, num_targets, num_atom):
+def create_new_controls(target_atom, num_atom):
     """Write new directories and control files to calculate FOB."""
     ks_method = 'KS_method               serial\n'
     charge = 'charge                  1.0\n'
     cube = 'output                  cube spin_density\n'
 
-    if type(num_atom) == list:
-        loop_iterator = num_atom
-    else:
-        loop_iterator = range(num_atom)
-
-    for i in loop_iterator:
-        if type(num_atom) != list:
-            i += 1
-
+    for i in range(num_atom):
+        i += 1
         os.mkdir(f'../{target_atom}{i}/')
         shutil.copyfile('control.in', f'../{target_atom}{i}/control.in')
         shutil.copyfile('geometry.in', f'../{target_atom}{i}/geometry.in')
 
         control = f'../{target_atom}{i}/control.in'
-        fob = f'force_occupation_basis  {i} 1 atomic 2 1 1 0.0 {num_targets}\n'
+        fob = f'force_occupation_basis  {i} 1 atomic 2 1 1 0.0 {num_atom}\n'
 
         # Find and replace stuff to be changed
         with open(control, 'r') as read_control:
@@ -170,5 +161,5 @@ def create_new_controls(target_atom, num_targets, num_atom):
 
 
 if __name__ == '__main__':
-    target_atom, atom_counter, num_atom = read_ground_inp()
-    create_new_controls(target_atom, atom_counter, num_atom)
+    target_atom, num_atom = read_ground_inp()
+    create_new_controls(target_atom, num_atom)

@@ -58,7 +58,7 @@ def dos_binning(eigenvalues,broadening=0.75, bin_width=0.01, mix1=0., mix2 = Non
 
 ###################################
 xstart = 280.
-xstop = 290.
+xstop = 295.
 broad1 = 0.7
 broad2 = 0.7
 firstpeak = 285.0

@@ -79,7 +79,7 @@ def read_ground_inp():
 
 
 def get_electronic_structure(target_atom):
-    """Get valence electronic structure of target atom"""
+    """Get valence electronic structure of target atom."""
     # Adapted from scipython.com question P2.5.12
 
     # All element symbols up to Rf
@@ -159,7 +159,7 @@ def create_init_1_files(target_atom, num_atom, at_num, atom_valence):
     init_iter = '# sc_init_iter          75\n'
     ks_method = 'KS_method                 serial\n'
     restart_file = 'restart_write_only        restart_file\n'
-    restart_save = '# restart_save_iterations   20\n'
+    restart_save = 'restart_save_iterations   20\n'
     restart_force = '# force_single_restartfile  .true.\n'
     charge = 'charge                    0.1\n'
     output_cube = 'output                  cube spin_density\n'
